@@ -1,0 +1,82 @@
+#include<bits/stdc++.h>
+using namespace std;
+int direction_sense(pair<int,int> a, pair<int,int> b, pair<int,int> c)
+{
+    int x1=a.first, y1=a.second;
+    int x2=b.first, y2=b.second;
+    int x3=c.first, y3=c.second;
+    int cross_product=(y2-y1)*(x3-x2)-(y3-y2)*(x2-x1);
+    if(cross_product==0) return 0;
+    if(cross_product>0) return 1;
+    if(cross_product<0) return -1;
+}
+int on_segment(pair<int,int> a, pair<int,int> b, pair<int,int> c)
+{
+    int x1=a.first, y1=a.second;
+    int x2=b.first, y2=b.second;
+    int x3=c.first, y3=c.second;
+    if(x2<=max(x1,x3) && x2>=min(x1,x3) && y2<=max(y1,y3) && y2>=min(y1,y3)) return 1;
+    return 0;
+}
+int is_intersecting(pair<int,int> p1, pair<int,int> q1, pair<int,int> p2, pair<int,int> q2)
+{
+    int i1=direction_sense(p1,q1,p2);
+    int i2=direction_sense(p1,q1,q2);
+    int i3=direction_sense(p2,q2,p1);
+    int i4=direction_sense(p2,q2,q1);
+    if(i1!=i2 && i3!=i4)  return 1;
+    if(i1==0 && on_segment(p1,p2,q1)) return 1;
+    if(i2==0 && on_segment(p1,q2,q1)) return 1;
+    if(i3==0 && on_segment(p2,p1,q2)) return 1;
+    if(i4==0 && on_segment(p2,q1,q2)) return 1;
+    return 0;
+    
+}
+int contained(vector<pair<int,int>> &poly, pair<int,int> p)
+{
+    int n=poly.size();
+    if(n<3) return 0;
+    int x=p.first, y=p.second;
+    pair<int,int> p_ext=make_pair(INT_MAX,y);
+    int count=0, i;
+    for(i=0;i<n-1;i++)
+    {
+        pair<int,int> l1=poly[i], l2=poly[i+1];
+        if(is_intersecting(l1,l2,p,p_ext))
+        {
+            if(direction_sense(l1,p,l2)==0)
+            {
+                return on_segment(l1,p,l2);
+            }
+            count++;
+        }
+        
+    }
+    pair<int,int> l1=poly[n-1], l2=poly[0];
+    if(is_intersecting(l1,l2,p,p_ext))
+    {
+        if(direction_sense(l1,p,l2)==0)
+        {
+            return on_segment(l1,p,l2);
+        }
+        count++;
+    }
+    if(count%2==1) return 1;
+    return 0;
+}
+int main()
+{
+    vector<pair<int,int>> poly;
+    int n; cin>>n;
+    for(int i=0;i<n;i++)
+    {
+        int x,y;
+        cin>>x>>y;
+        poly.push_back(make_pair(x,y));
+    }
+    pair<int,int> p;
+    int x,y; cin>>x>>y;
+    p=make_pair(x,y);
+    if(contained(poly,p)) cout<<" Point p lies inside the polygon";
+    else cout<<"Point p lies outside the polygon";
+}
