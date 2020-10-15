@@ -1,0 +1,163 @@
+#include<bits/stdc++.h>
+using namespace std;
+struct points
+{
+    pair<float,float> bottom_left;
+    pair<float,float> bottom_right;
+    pair<float,float> top_left;
+    pair<float,float> top_right;
+};
+float slope(pair<float,float> p1, pair<float,float> p2)
+{
+    float x1=p1.first, y1=p1.second, x2=p2.first, y2=p2.second;
+    float val=float((y2-y1))/float((x2-x1));
+    return val;
+}
+pair<float, float> find_intersect(float slope, pair<float,float> sun_location, struct points b1)
+{
+    pair<float,float> bl=b1.bottom_left, tl=b1.top_left, tr=b1.top_right;
+    pair<float,float> ans;
+    int a=sun_location.first, b=sun_location.second;
+    float x1=bl.first, y1=bl.second, x2=tl.first, y2=tl.second, x3=tr.first, y3=tr.second;
+    float y=b+slope*(x2-a);
+    if(y>=y1 && y<=y2)
+    {
+        ans=make_pair(x2,y);
+        return ans;
+    }
+    else
+    {
+        float x=(y2-b)/slope +a;
+        ans=make_pair(x,y2);
+        return ans;
+    }
+}
+bool compare(points a, points b)
+{
+    return a.bottom_left.first<b.bottom_left.first;
+}
+float area_exp(vector<struct points> &buildings, pair<float,float> sun_location, int l, int r, float max_slope)
+{
+    int n=buildings.size(),i,j;
+    //reverse(buildings.begin(), buildings.end());
+    float a=sun_location.first, b=sun_location.second;
+    float ans=0;
+    for(i=l;i<=r;i++)
+    {
+        pair<float,float> tl=buildings[i].top_left, tr=buildings[i].top_right, bl=buildings[i].bottom_left;
+        float s1=slope(bl, sun_location);
+        //float s2=slope(tl, sun_location);
+        float s3=slope(tr, sun_location);
+        if(s3>max_slope)
+        {
+            if(s1>max_slope)
+            {
+                ans+=(tl.second-bl.second)+(tr.first-tl.first);
+                max_slope=s3;
+            }
+            else
+            {
+                pair<float,float> intersection=find_intersect(max_slope, sun_location,  buildings[i]);
+                ans+=(tr.second-intersection.second)+(tr.first-intersection.first);
+                max_slope=s3;
+            }
+        }
+    }
+    return ans;
+}
+float area_exp2(vector<struct points> &buildings, pair<float,float> sun_location, int l, int r, float max_slope)
+{
+    int n=buildings.size(),i,j;
+    //reverse(buildings.begin(), buildings.end());
+    float a=sun_location.first, b=sun_location.second;
+    float ans=0;
+    for(i=r;i>=l;i--)
+    {
+        pair<float,float> tl=buildings[i].top_left, tr=buildings[i].top_right, br=buildings[i].bottom_right;
+        float s1=slope(br, sun_location);
+        float s3=slope(tl, sun_location);
+        if(s3<max_slope)
+        {
+            if(s1<max_slope)
+            {
+                ans+=(tr.second-br.second)+(tr.first-tl.first);
+                max_slope=s3;
+            }
+            else
+            {
+                pair<float,float> intersection=find_intersect(max_slope, sun_location,  buildings[i]);
+                ans+=(tl.second-intersection.second)+(intersection.first-tl.first);
+                max_slope=s3;
+            }
+            
+        }
+    }
+    return ans;
+}
+int direct_above(vector<struct points> &buildings, pair<float,float> sun_location)
+{
+    int n=buildings.size(),i,j;
+    for(i=0;i<n;i++)
+    {
+        pair<float,float> tr=buildings[i].top_right, tl=buildings[i].top_left;
+        if(sun_location.first>=tl.first && sun_location.first<=tr.first) return i;
+    }
+    return -1;
+}
+int split(vector<struct points> &buildings, pair<float,float> sun_location)
+{
+    int n=buildings.size(),i,j;
+    struct points f=buildings[0];
+    struct points l=buildings[n-1];
+    pair<float,float>tl=f.top_left, tr=l.top_right;
+    if(sun_location.first<tl.first) return -1;
+    if(sun_location.first>tr.first) return n;
+    for(i=0;i<n-1;i++)
+    {
+        struct points b1=buildings[i], b2=buildings[i+1];
+        pair<float,float> tr1=b1.top_right, tl2=b2.top_left;
+        if(sun_location.first>=tr1.first && sun_location.first<=tl2.first) return i;
+    }
+}
+int main()
+{
+    int n; cin>>n;
+    float x,y,ans=0;
+    vector<struct points> buildings;
+    for(int i=0;i<n;i++)
+    {
+        struct points coordinate;
+        cin>>x>>y; coordinate.top_left=make_pair(x,y);
+        cin>>x>>y; coordinate.bottom_left=make_pair(x,y);
+        cin>>x>>y; coordinate.bottom_right=make_pair(x,y);
+        cin>>x>>y; coordinate.top_right=make_pair(x,y);
+        buildings.push_back(coordinate);
+    }
+    pair<float,float> sun_location;
+    cin>>x>>y;
+    sun_location=make_pair(x,y);
+    sort(buildings.begin(), buildings.end(),compare);
+    int loc=direct_above(buildings,sun_location);
+    if(loc!=-1)
+    {
+        struct points b1=buildings[loc];
+        pair<float,float> tl=b1.top_left, tr=b1.top_right;
+        float ans=0;
+        ans+=tr.first-tl.first;
+        int r=loc+1, l=loc-1;
+        if(r!=n) ans+=area_exp(buildings, sun_location,r,n-1,slope(buildings[loc].top_right,sun_location));
+        if(l!=-1) ans+=area_exp2(buildings, sun_location,0,l,slope(buildings[loc].top_left,sun_location));
+    }
+    else
+    {
+        int loc=split(buildings, sun_location);
+        if(loc==-1) ans=area_exp(buildings, sun_location, 0,n-1,-1e9);
+        else if(loc==n) ans=area_exp2(buildings, sun_location,0,n-1,1e9);
+        else
+        {
+            ans+=area_exp2(buildings, sun_location,0,loc,1e9);
+            ans+=area_exp(buildings, sun_location,loc+1,n-1,-1e9);
+        }
+    }
+    cout<<ans<<endl;
+}
